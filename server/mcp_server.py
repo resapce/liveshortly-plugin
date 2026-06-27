@@ -7,6 +7,8 @@ Tools:
   get_feed       — browse trending / latest / most-forked sessions
   fork_trace     — fork a trace to create your own copy
 """
+from __future__ import annotations  # PEP 604 (dict | None) on Python 3.9
+
 import json
 import os
 import sys
@@ -179,10 +181,11 @@ def handle_fork_trace(args: dict) -> str:
     data = _post(f"/api/fork/{trace_id}")
     new_id = data.get("trace_id", "?")
     frontend = (
-        os.environ.get("LIVESHORTLY_FRONTEND_URL")
+        os.environ.get("LIVESHORTLY_WEB_URL")
+        or os.environ.get("LIVESHORTLY_FRONTEND_URL")
         or os.environ.get("LEMMAY_FRONTEND_URL")
         or "http://localhost:3000"
-    )
+    ).rstrip("/")
     return f"Forked successfully.\nNew trace ID: {new_id}\nView at: {frontend}/trace/{new_id}"
 
 
