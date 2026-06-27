@@ -28,7 +28,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 // reply tool disabled — kept for future re-enable
 import { createServer, IncomingMessage, ServerResponse } from 'http'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync, chmodSync } from 'fs'
 import { execSync } from 'child_process'
 import { z } from 'zod'
 
@@ -46,9 +46,74 @@ const API_URL = (
 const POLL_INTERVAL_MS = Number(process.env.COMMENT_POLL_MS ?? 3000)
 const HOME = process.env.HOME ?? process.env.USERPROFILE ?? ''
 const CURRENT_FILE = `${HOME}/.claude/liveshortly/current.json`
+const CRED_FILE = process.env.LIVESHORTLY_CRED_PATH ?? `${HOME}/.liveshortly/credentials.json`
 
 function log(msg: string) {
   process.stderr.write(`[liveshortly-channel] ${msg}\n`)
+}
+
+// ─── shared credential store (mirror of hooks/lib/auth.py) ──────────────────────
+
+interface Creds {
+  api_url?: string
+  access_token?: string
+  refresh_token?: string
+  expires_at?: string
+  user?: { email?: string; name?: string }
+}
+
+function loadCreds(): Creds | null {
+  try {
+    return JSON.parse(readFileSync(CRED_FILE, 'utf8')) as Creds
+  } catch {
+    return null // no creds → unauthenticated, degrade silently
+  }
+}
+
+function saveCreds(c: Creds) {
+  try {
+    writeFileSync(CRED_FILE, JSON.stringify(c, null, 2))
+    chmodSync(CRED_FILE, 0o600)
+  } catch (err) {
+    log(`failed to write credentials: ${err}`)
+  }
+}
+
+function authHeaders(): Record<string, string> {
+  const c = loadCreds()
+  return c?.access_token ? { Authorization: `Bearer ${c.access_token}` } : {}
+}
+
+// POST /auth/token with the refresh token; rewrite the creds file. Returns ok.
+async function refreshToken(): Promise<boolean> {
+  const c = loadCreds()
+  if (!c?.refresh_token) return false
+  try {
+    const resp = await fetch(`${API_URL}/auth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: c.refresh_token }),
+    })
+    if (!resp.ok) return false
+    const data = await resp.json() as { access_token?: string; refresh_token?: string; expires_in?: number }
+    if (!data.access_token) return false
+    c.access_token = data.access_token
+    if (data.refresh_token) c.refresh_token = data.refresh_token
+    if (data.expires_in) c.expires_at = new Date(Date.now() + data.expires_in * 1000).toISOString()
+    saveCreds(c)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// fetch with bearer auth + one refresh-and-retry on 401
+async function authedFetch(url: string): Promise<Response> {
+  let resp = await fetch(url, { headers: authHeaders() })
+  if (resp.status === 401 && (await refreshToken())) {
+    resp = await fetch(url, { headers: authHeaders() })
+  }
+  return resp
 }
 
 // kill any stale process holding our port so reconnects always succeed
@@ -133,11 +198,11 @@ async function pollComments() {
 
   let data: { comments?: { username?: string; message?: string; id?: string }[] }
   try {
-    const resp = await fetch(`${API_URL}/api/sessions/${liveId}/comments/pending`)
+    const resp = await authedFetch(`${API_URL}/api/sessions/${liveId}/comments/pending`)
     if (!resp.ok) return
     data = await resp.json() as typeof data
   } catch {
-    return // API not running — skip silently
+    return // API not running / not signed in — skip silently
   }
 
   for (const comment of (data.comments ?? [])) {

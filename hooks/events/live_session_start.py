@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
 import common  # noqa: E402
 import state   # noqa: E402
+import auth    # noqa: E402
 
 
 def main():
@@ -18,6 +19,16 @@ def main():
     if not base or base in (".", "/"):
         base = "session"
     title = f"{base} ({source})"
+
+    # Capture requires a signed-in user (the session is owned by that account).
+    if auth.access_token() is None:
+        plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        common.notify(
+            "Not signed in — run the `login` tool or "
+            f"`python3 {os.path.join(plugin_root, 'lib', 'auth.py')} login`"
+        )
+        common.done()
+        return
 
     common.notify("SessionStart — starting live session…")
 

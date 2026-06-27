@@ -6,6 +6,9 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import auth  # noqa: E402  (shared credential layer — bearer auth + refresh)
+
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -31,12 +34,15 @@ def web_url() -> str:
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
 
-def _request(method: str, path: str, body=None, timeout: int = 10):
-    """Make an HTTP request. Returns (data_dict_or_None, status_code). Never raises."""
+def _send(method: str, path: str, body=None, timeout: int = 10):
+    """Single HTTP attempt with bearer auth. Returns (data|None, status)."""
     try:
         url = _api_url() + path
         data = json.dumps(body).encode() if body is not None else None
-        headers = {"Content-Type": "application/json"} if data else {}
+        # Bearer token identifies the signed-in user; {} if not logged in.
+        headers = dict(auth.auth_headers())
+        if data:
+            headers["Content-Type"] = "application/json"
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read()), resp.status
@@ -44,6 +50,21 @@ def _request(method: str, path: str, body=None, timeout: int = 10):
         return None, e.code
     except Exception:
         return None, 0
+
+
+def _request(method: str, path: str, body=None, timeout: int = 10):
+    """Make an HTTP request. Returns (data_dict_or_None, status_code). Never raises.
+
+    On a 401 the access token is refreshed once and the request is retried.
+    """
+    data, status = _send(method, path, body=body, timeout=timeout)
+    if status == 401:
+        try:
+            if auth.refresh():
+                data, status = _send(method, path, body=body, timeout=timeout)
+        except Exception:
+            pass
+    return data, status
 
 
 def api_get(path: str, timeout: int = 10):
