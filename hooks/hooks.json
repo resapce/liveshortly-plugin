@@ -1,0 +1,73 @@
+{
+  "description": "liveshortly plugin — records live sessions and streams events to viewers",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/live_session_start.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/user_prompt_submit.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/pre_tool_use.py\"",
+            "timeout": 8
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/post_tool_use.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/stop.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/session_end.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

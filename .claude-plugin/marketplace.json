@@ -1,0 +1,19 @@
+{
+  "name": "liveshortly-local",
+  "description": "Injects a custom system message at the start of every Claude Code session",
+  "owner": {
+    "name": "Mukul",
+    "email": "mukulmalviya2@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "liveshortly",
+      "source": "./",
+      "description": "Injects a custom system message at SessionStart via hooks",
+      "version": "2.3.0",
+      "author": {
+        "name": "Mukul"
+      }
+    }
+  ]
+}

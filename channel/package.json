@@ -1,0 +1,14 @@
+{
+  "name": "system-message-channel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/channel.ts",
+    "build": "bun build src/channel.ts --outfile dist/channel.js --target bun --minify"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.0"
+  }
+}
