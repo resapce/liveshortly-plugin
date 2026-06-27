@@ -16,6 +16,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+# Import the shared credential layer (hooks/lib/auth.py) for bearer auth.
+_PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_PLUGIN_ROOT, "hooks", "lib"))
+import auth  # noqa: E402
+
 API_URL = (
     os.environ.get("LIVESHORTLY_API_URL")
     or os.environ.get("LEMMAY_API_URL")
@@ -24,16 +29,33 @@ API_URL = (
 
 
 def _get(path: str) -> dict:
-    with urllib.request.urlopen(API_URL + path, timeout=15) as r:
-        return json.loads(r.read())
+    req = urllib.request.Request(API_URL + path, headers=dict(auth.auth_headers()), method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        if e.code == 401 and auth.refresh():
+            req = urllib.request.Request(API_URL + path, headers=dict(auth.auth_headers()), method="GET")
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return json.loads(r.read())
+        raise
 
 
 def _post(path: str, body: dict | None = None) -> dict:
-    data = json.dumps(body).encode() if body else None
-    headers = {"Content-Type": "application/json"} if data else {}
-    req = urllib.request.Request(API_URL + path, data=data, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read())
+    def _attempt() -> dict:
+        data = json.dumps(body).encode() if body else None
+        headers = dict(auth.auth_headers())
+        if data:
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(API_URL + path, data=data, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read())
+    try:
+        return _attempt()
+    except urllib.error.HTTPError as e:
+        if e.code == 401 and auth.refresh():
+            return _attempt()
+        raise
 
 
 # ── formatters ────────────────────────────────────────────────────────────────
@@ -122,6 +144,21 @@ TOOLS = [
             "required": ["trace_id"],
         },
     },
+    {
+        "name": "login",
+        "description": "Sign in to LiveShortly via browser device-flow OAuth. Opens a browser to approve, then stores tokens in ~/.liveshortly/credentials.json. Run this to authenticate so your sessions are owned by your account.",
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "logout",
+        "description": "Sign out of LiveShortly by deleting the local credentials.",
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "whoami",
+        "description": "Show the currently signed-in LiveShortly identity (email/name), or that you are not signed in.",
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
 ]
 
 
@@ -189,11 +226,39 @@ def handle_fork_trace(args: dict) -> str:
     return f"Forked successfully.\nNew trace ID: {new_id}\nView at: {frontend}/trace/{new_id}"
 
 
+def handle_login(args: dict) -> str:
+    user = auth.login()
+    if user:
+        email = user.get("email") or "your account"
+        return f"Logged in as {email}."
+    return (
+        "Login did not complete. Make sure the API is reachable and that you "
+        "approved the request in the browser, then run `login` again."
+    )
+
+
+def handle_logout(args: dict) -> str:
+    auth.logout()
+    return "Logged out. Local credentials deleted."
+
+
+def handle_whoami(args: dict) -> str:
+    me = auth.whoami()
+    if me:
+        email = me.get("email") or me.get("id") or "?"
+        name = me.get("name")
+        return f"Signed in as {email}" + (f" ({name})" if name else "")
+    return "Not signed in. Run the `login` tool to authenticate."
+
+
 HANDLERS = {
     "search_traces": handle_search_traces,
     "get_trace":     handle_get_trace,
     "get_feed":      handle_get_feed,
     "fork_trace":    handle_fork_trace,
+    "login":         handle_login,
+    "logout":        handle_logout,
+    "whoami":        handle_whoami,
 }
 
 

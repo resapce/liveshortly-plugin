@@ -72,6 +72,55 @@ plugin/
 
 ---
 
+## Authentication
+
+The plugin signs in with a **browser device-flow OAuth login** and stores tokens
+in a shared credential file. Ownership of your sessions comes from the **signed-in
+Google account**, not from a `user@hostname` handle. Every API call (hooks, MCP
+server, channel poller) sends `Authorization: Bearer <access_token>` and the
+access token is auto-refreshed when it nears expiry.
+
+### Logging in
+
+Either via the MCP `login` tool (the primary UX — ask Claude to run it), or from a
+shell:
+
+```bash
+python3 <plugin>/hooks/lib/auth.py login    # opens the browser, polls, stores creds
+python3 <plugin>/hooks/lib/auth.py whoami    # prints the signed-in identity
+python3 <plugin>/hooks/lib/auth.py logout    # deletes the local credentials
+```
+
+`login` calls `POST /auth/device/start`, prints + opens the `verification_uri_complete`,
+and polls `POST /auth/device/poll` until you approve in the browser.
+
+MCP tools (same behaviour, runnable by the agent): **`login`**, **`logout`**, **`whoami`**.
+
+### Credential store
+
+File: `~/.liveshortly/credentials.json` (mode `0600`, override with `LIVESHORTLY_CRED_PATH`):
+
+```json
+{
+  "api_url": "https://server.liveshortly.com",
+  "access_token": "...",
+  "refresh_token": "lsr_...",
+  "expires_at": "2026-06-27T11:00:00+00:00",
+  "user": { "email": "you@example.com", "name": "You" }
+}
+```
+
+- **Auto-refresh:** when `now >= expires_at - 60s`, clients call `POST /auth/token`
+  (`grant_type=refresh_token`), rewrite the file, and continue. A 401 also triggers
+  one refresh-and-retry. If the refresh token is rejected (401), the file is deleted
+  and the client falls back to unauthenticated.
+- **Degrade gracefully:** with no creds (or a dead API) every client runs
+  unauthenticated and never crashes. `SessionStart` simply notifies
+  *"Not signed in — run the `login` tool"* and skips capture without blocking Claude.
+
+> **Removed:** the old `X-LiveShortly-Handle` / `LIVESHORTLY_HANDLE` ownership model is
+> gone. Identity now comes from your signed-in account.
+
 ## Configuration
 
 All config is done through environment variables. No config files, no database.
@@ -80,8 +129,9 @@ All config is done through environment variables. No config files, no database.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LIVESHORTLY_API_URL` | `http://localhost:8000` | liveshortly backend API |
+| `LIVESHORTLY_API_URL` | `http://localhost:8000` | liveshortly backend API (also used for the device-flow `/auth/*` endpoints) |
 | `LEMMAY_API_URL` | _(fallback)_ | legacy alias for the same API |
+| `LIVESHORTLY_CRED_PATH` | `~/.liveshortly/credentials.json` | override the shared credential file location |
 | `LIVESHORTLY_FRONTEND_URL` | `http://localhost:3000` | frontend (used to build the viewer URL) |
 | `LEMMAY_FRONTEND_URL` | _(fallback)_ | legacy alias for the same frontend |
 
@@ -165,6 +215,11 @@ Read-only tools for browsing the trace library. Talks to the API via `urllib` (n
 | `get_trace` | `GET /api/traces/:id` | Full conversation + tool call history |
 | `get_feed` | `GET /api/feed?type=...` | Trending / latest / most-forked sessions |
 | `fork_trace` | `POST /api/fork/:id` | Fork a session to create your own copy |
+| `login` | `POST /auth/device/start` + `/poll` | Browser device-flow sign-in; stores creds |
+| `logout` | _(local)_ | Delete the local credentials |
+| `whoami` | `GET /api/me` | Show the signed-in identity |
+
+All trace-browse tools also send `Authorization: Bearer <access_token>` when signed in.
 
 ### `liveshortly-channel` (TypeScript — `channel/channel.ts`)
 
@@ -204,14 +259,20 @@ claude plugin update liveshortly    # install / upgrade the plugin
 
 ## API endpoints used
 
-All calls go to `LIVESHORTLY_API_URL`. Authentication is handled server-side (poc-user is hardcoded in the dev API).
+All calls go to `LIVESHORTLY_API_URL`. Requests carry `Authorization: Bearer <access_token>`
+from `~/.liveshortly/credentials.json` (see [Authentication](#authentication)); the server
+resolves the owning user from that token.
 
 | Method | Path | Used by |
 |---|---|---|
-| `POST` | `/api/live/start` | `live_session_start.py` |
-| `POST` | `/api/live/:id/stop` | `session_end.py` |
-| `POST` | `/api/live/:id/emit` | `pre_tool_use.py`, `post_tool_use.py`, `stop.py` |
-| `GET` | `/api/live/:id/comments/pending` | `user_prompt_submit.py`, `channel.ts` poller |
+| `POST` | `/auth/device/start` | `auth.py` / `login` tool |
+| `POST` | `/auth/device/poll` | `auth.py` / `login` tool |
+| `POST` | `/auth/token` | token auto-refresh (all clients) |
+| `GET` | `/api/me` | `whoami` tool |
+| `POST` | `/api/sessions` | `live_session_start.py` |
+| `POST` | `/api/sessions/:id/stop` | `session_end.py` |
+| `POST` | `/api/sessions/:id/events` | `pre_tool_use.py`, `post_tool_use.py`, `stop.py` |
+| `GET` | `/api/sessions/:id/comments/pending` | `user_prompt_submit.py`, `channel.ts` poller |
 | `GET` | `/api/search` | `search_traces` tool |
 | `GET` | `/api/traces/:id` | `get_trace` tool |
 | `GET` | `/api/feed` | `get_feed` tool |

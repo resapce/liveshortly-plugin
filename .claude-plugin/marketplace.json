@@ -9,8 +9,8 @@
     {
       "name": "liveshortly",
       "source": "./",
-      "description": "Injects a custom system message at SessionStart via hooks",
-      "version": "2.3.0",
+      "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back \u2014 with browser-based sign-in.",
+      "version": "3.0.0",
       "author": {
         "name": "Mukul"
       }
