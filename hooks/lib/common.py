@@ -18,6 +18,17 @@ def _api_url() -> str:
     return url.rstrip("/")
 
 
+def web_url() -> str:
+    """Base URL of the LiveShortly web app (for shareable links)."""
+    url = (
+        os.environ.get("LIVESHORTLY_WEB_URL")
+        or os.environ.get("LIVESHORTLY_FRONTEND_URL")
+        or os.environ.get("LEMMAY_FRONTEND_URL")
+        or "http://localhost:3000"
+    )
+    return url.rstrip("/")
+
+
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
 
 def _request(method: str, path: str, body=None, timeout: int = 10):
@@ -45,34 +56,41 @@ def api_post(path: str, body=None, timeout: int = 10):
 
 # ── Live session helpers ──────────────────────────────────────────────────────
 
-def live_start(timeout: int = 25):
-    """Start a live session. Returns session_id or None."""
-    data, status = api_post("/api/live/start", timeout=timeout)
-    if status == 201 and data:
-        return data.get("session_id")
+def live_start(title: str = "session", model: str = "claude",
+               framework: str = "claude-code", timeout: int = 25):
+    """Create a live session. Returns the session id or None."""
+    data, status = api_post("/api/sessions", {
+        "title": title,
+        "model": model,
+        "framework": framework,
+    }, timeout=timeout)
+    if data and 200 <= status < 300:
+        return data.get("id")
     return None
 
 
 def live_stop(live_id: str, timeout: int = 25):
     """Stop a live session and archive it. Returns the trace URL or None."""
-    data, status = api_post(f"/api/live/{live_id}/stop", timeout=timeout)
-    if status == 200 and data:
+    data, status = api_post(f"/api/sessions/{live_id}/stop", timeout=timeout)
+    if data and 200 <= status < 300:
         return data.get("url")
     return None
 
 
-def emit_event(live_id: str, event_type: str, payload_dict: dict, timeout: int = 10) -> None:
+def emit_event(live_id: str, event_type: str, payload_dict: dict,
+               actor: str = "agent", timeout: int = 10) -> None:
     """Emit an event into the live session feed."""
-    api_post(f"/api/live/{live_id}/emit", {
+    api_post(f"/api/sessions/{live_id}/events", {
         "event_type": event_type,
         "payload": payload_dict,
+        "actor": actor,
     }, timeout=timeout)
 
 
 def fetch_viewer_comments(live_id: str, timeout: int = 8) -> list:
     """Pop all pending viewer comments for this session."""
-    data, status = api_get(f"/api/live/{live_id}/comments/pending", timeout=timeout)
-    if status == 200 and data:
+    data, status = api_get(f"/api/sessions/{live_id}/comments/pending", timeout=timeout)
+    if data and 200 <= status < 300:
         return data.get("comments", [])
     return []
 

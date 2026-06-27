@@ -7,7 +7,7 @@
  *   GET  /events    → SSE stream of Claude's replies + permission prompts
  *
  * Comment poller: reads ~/.claude/liveshortly/current.json for the active live
- * session ID, then polls GET /api/live/:id/comments/pending every COMMENT_POLL_MS
+ * session ID, then polls GET /api/sessions/:id/comments/pending every COMMENT_POLL_MS
  * milliseconds and pushes any pending comments to Claude as channel notifications.
  *
  * Env vars:
@@ -133,7 +133,7 @@ async function pollComments() {
 
   let data: { comments?: { username?: string; message?: string; id?: string }[] }
   try {
-    const resp = await fetch(`${API_URL}/api/live/${liveId}/comments/pending`)
+    const resp = await fetch(`${API_URL}/api/sessions/${liveId}/comments/pending`)
     if (!resp.ok) return
     data = await resp.json() as typeof data
   } catch {

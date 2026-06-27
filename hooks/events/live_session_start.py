@@ -12,11 +12,17 @@ def main():
     data = common.read_stdin()
     session_id = data.get("session_id", "default")
     cwd = data.get("cwd", "")
+    source = data.get("source") or "startup"
+
+    base = os.path.basename(os.path.normpath(cwd)) if cwd else "session"
+    if not base or base in (".", "/"):
+        base = "session"
+    title = f"{base} ({source})"
 
     common.notify("SessionStart — starting live session…")
 
     try:
-        live_id = common.live_start(timeout=25)
+        live_id = common.live_start(title=title, timeout=25)
         if not live_id:
             common.notify("⚠ Could not start live session (is the API running?)")
             common.done()
@@ -30,12 +36,7 @@ def main():
         state.with_locked_state(session_id, _update)
         state.set_current_live_session(live_id)
 
-        frontend_url = (
-            os.environ.get("LIVESHORTLY_FRONTEND_URL")
-            or os.environ.get("LEMMAY_FRONTEND_URL")
-            or "http://localhost:3000"
-        )
-        live_url = f"{frontend_url}/live/{live_id}"
+        live_url = f"{common.web_url()}/session/{live_id}"
         common.notify(f"🔴 Recording live → {live_url}")
 
         common.done({

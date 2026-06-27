@@ -1,6 +1,6 @@
 {
   "name": "liveshortly",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Injects a custom system message at session start, exposes tools to read/update it, and runs a two-way webhook channel",
   "author": {
     "name": "Mukul"
