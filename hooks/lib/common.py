@@ -73,7 +73,9 @@ def live_stop(live_id: str, timeout: int = 25):
     """Stop a live session and archive it. Returns the trace URL or None."""
     data, status = api_post(f"/api/sessions/{live_id}/stop", timeout=timeout)
     if data and 200 <= status < 300:
-        return data.get("url")
+        # Prefer a server-provided url; otherwise build the shareable link
+        # from the session id (the /stop response returns the session object).
+        return data.get("url") or f"{web_url()}/session/{data.get('id', live_id)}"
     return None
 
 
