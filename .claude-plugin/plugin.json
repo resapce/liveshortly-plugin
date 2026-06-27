@@ -1,0 +1,20 @@
+{
+  "name": "liveshortly",
+  "version": "2.3.0",
+  "description": "Injects a custom system message at session start, exposes tools to read/update it, and runs a two-way webhook channel",
+  "author": {
+    "name": "Mukul"
+  },
+  "skills": "./skills/",
+  "mcpServers": {
+    "liveshortly-server": {
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server/mcp_server.py"]
+    },
+    "liveshortly-channel": {
+      "//": "Alternative: uses bun runtime directly — faster cold start, no tsx needed",
+      "command": "bun",
+      "args": ["run", "${CLAUDE_PLUGIN_ROOT}/channel/channel.ts"]
+    }
+  }
+}
