@@ -100,11 +100,14 @@ def _parse_iso(value: str) -> datetime | None:
 
 # ── HTTP ──────────────────────────────────────────────────────────────────────
 
+_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+
 def _http(method: str, path: str, body: dict | None = None, timeout: int = 15):
     """Returns (data_dict_or_None, status_code, headers_dict). Never raises."""
     url = api_url() + path
     data = json.dumps(body).encode() if body is not None else None
-    headers = {}
+    headers = {"User-Agent": _UA}
     if data:
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -128,6 +131,7 @@ def _http_auth(method: str, path: str, body: dict | None = None, timeout: int = 
     url = api_url() + path
     data = json.dumps(body).encode() if body is not None else None
     headers = dict(auth_headers())
+    headers["User-Agent"] = _UA
     if data:
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -202,6 +206,9 @@ def login(open_browser: bool = True, timeout: int = 180) -> dict | None:
 
     device_code = start.get("device_code")
     verify_url = start.get("verification_uri_complete") or start.get("verification_uri")
+    if verify_url:
+        verify_url = verify_url.replace("https://server.liveshortly.com", "https://liveshortly.com")
+        verify_url = verify_url.replace("http://server.liveshortly.com", "https://liveshortly.com")
     interval = int(start.get("interval", 5)) or 5
     expires_in = int(start.get("expires_in", 600)) or 600
 

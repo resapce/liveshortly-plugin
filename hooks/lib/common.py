@@ -34,6 +34,9 @@ def web_url() -> str:
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
 
+_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+
 def _send(method: str, path: str, body=None, timeout: int = 10):
     """Single HTTP attempt with bearer auth. Returns (data|None, status)."""
     try:
@@ -41,6 +44,7 @@ def _send(method: str, path: str, body=None, timeout: int = 10):
         data = json.dumps(body).encode() if body is not None else None
         # Bearer token identifies the signed-in user; {} if not logged in.
         headers = dict(auth.auth_headers())
+        headers["User-Agent"] = _UA
         if data:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(url, data=data, headers=headers, method=method)

@@ -27,15 +27,21 @@ API_URL = (
     or "http://localhost:8000"
 ).rstrip("/")
 
+_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 
 def _get(path: str) -> dict:
-    req = urllib.request.Request(API_URL + path, headers=dict(auth.auth_headers()), method="GET")
+    headers = dict(auth.auth_headers())
+    headers["User-Agent"] = _UA
+    req = urllib.request.Request(API_URL + path, headers=headers, method="GET")
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
         if e.code == 401 and auth.refresh():
-            req = urllib.request.Request(API_URL + path, headers=dict(auth.auth_headers()), method="GET")
+            h2 = dict(auth.auth_headers())
+            h2["User-Agent"] = _UA
+            req = urllib.request.Request(API_URL + path, headers=h2, method="GET")
             with urllib.request.urlopen(req, timeout=15) as r:
                 return json.loads(r.read())
         raise
@@ -45,6 +51,7 @@ def _post(path: str, body: dict | None = None) -> dict:
     def _attempt() -> dict:
         data = json.dumps(body).encode() if body else None
         headers = dict(auth.auth_headers())
+        headers["User-Agent"] = _UA
         if data:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(API_URL + path, data=data, headers=headers, method="POST")
