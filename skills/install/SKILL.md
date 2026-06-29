@@ -10,7 +10,7 @@ your prompts, tool calls, and file edits; lets you **share** sessions Google-Dri
 style; and lets viewers **message back** into your session. v3 uses **browser-based
 sign-in** (no tokens to copy) — your sessions are owned by your Google account.
 
-Default backend: **https://server.liveshortly.com**
+Default backend: **https://liveshortly.com**
 
 ---
 
@@ -30,8 +30,8 @@ hooks talk to the hosted backend:
 ```json
 {
   "env": {
-    "LIVESHORTLY_API_URL": "https://server.liveshortly.com",
-    "LIVESHORTLY_WEB_URL": "https://server.liveshortly.com"
+    "LIVESHORTLY_API_URL": "https://liveshortly.com",
+    "LIVESHORTLY_WEB_URL": "https://liveshortly.com"
   }
 }
 ```
@@ -72,10 +72,10 @@ Verify with the `whoami` tool or `… auth.py whoami`.
 Just code. On the next session start you'll see:
 
 ```
-🔴 Recording live → https://server.liveshortly.com/session/<id>
+🔴 Recording live → https://liveshortly.com/session/<id>
 ```
 
-- Open the dashboard at **https://server.liveshortly.com** → your runs appear under
+- Open the dashboard at **https://liveshortly.com** → your runs appear under
   **MY SESSIONS**.
 - **Share** a session (owner): click **SHARE** on its row → add an email + role
   (VIEWER / COMMENTER). It shows up under **SHARED WITH ME** for them.

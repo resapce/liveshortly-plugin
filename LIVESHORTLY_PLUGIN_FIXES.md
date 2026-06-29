@@ -8,7 +8,7 @@ backend and make it actually run. Two classes of change:
 2. **Runtime fixes** — bugs that stop the plugin from running at all (Python 3.9
    crash, missing share-URL, localhost-only fork links).
 
-Tested end-to-end against a hosted backend (`https://server.liveshortly.com`).
+Tested end-to-end against a hosted backend (`https://liveshortly.com`).
 
 ---
 
@@ -68,8 +68,8 @@ hit prod. Easiest single place is Claude Code `~/.claude/settings.json`:
 ```json
 {
   "env": {
-    "LIVESHORTLY_API_URL": "https://server.liveshortly.com",
-    "LIVESHORTLY_WEB_URL": "https://server.liveshortly.com"
+    "LIVESHORTLY_API_URL": "https://liveshortly.com",
+    "LIVESHORTLY_WEB_URL": "https://liveshortly.com"
   }
 }
 ```
@@ -117,8 +117,8 @@ The **core live-session flow** (create / emit events / poll comments / stop) wor
 
 ```bash
 cd <plugin-dir>
-export LIVESHORTLY_API_URL=https://server.liveshortly.com
-export LIVESHORTLY_WEB_URL=https://server.liveshortly.com
+export LIVESHORTLY_API_URL=https://liveshortly.com
+export LIVESHORTLY_WEB_URL=https://liveshortly.com
 
 # hooks pipeline
 python3 - <<'PY'

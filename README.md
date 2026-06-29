@@ -102,7 +102,7 @@ File: `~/.liveshortly/credentials.json` (mode `0600`, override with `LIVESHORTLY
 
 ```json
 {
-  "api_url": "https://server.liveshortly.com",
+  "api_url": "https://liveshortly.com",
   "access_token": "...",
   "refresh_token": "lsr_...",
   "expires_at": "2026-06-27T11:00:00+00:00",
