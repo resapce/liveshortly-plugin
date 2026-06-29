@@ -13,23 +13,12 @@ import auth  # noqa: E402  (shared credential layer — bearer auth + refresh)
 # ── Config ────────────────────────────────────────────────────────────────────
 
 def _api_url() -> str:
-    url = (
-        os.environ.get("LIVESHORTLY_API_URL")
-        or os.environ.get("LEMMAY_API_URL")
-        or "http://localhost:8000"
-    )
-    return url.rstrip("/")
+    return auth.api_url()
 
 
 def web_url() -> str:
     """Base URL of the LiveShortly web app (for shareable links)."""
-    url = (
-        os.environ.get("LIVESHORTLY_WEB_URL")
-        or os.environ.get("LIVESHORTLY_FRONTEND_URL")
-        or os.environ.get("LEMMAY_FRONTEND_URL")
-        or "http://localhost:3000"
-    )
-    return url.rstrip("/")
+    return auth.web_url()
 
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────

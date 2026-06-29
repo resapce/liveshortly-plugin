@@ -36,8 +36,36 @@ def cred_path() -> str:
 CRED_PATH = cred_path()
 
 
+def host_path() -> str:
+    return os.path.expanduser("~/.liveshortly/host.json")
+
+
+def load_host() -> dict:
+    """Load ~/.liveshortly/host.json. Returns {} if missing."""
+    try:
+        with open(host_path()) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def api_url() -> str:
-    return (os.environ.get("LIVESHORTLY_API_URL") or "http://localhost:8000").rstrip("/")
+    host = load_host()
+    return (
+        host.get("api_url")
+        or os.environ.get("LIVESHORTLY_API_URL")
+        or "http://localhost:8000"
+    ).rstrip("/")
+
+
+def web_url() -> str:
+    host = load_host()
+    return (
+        host.get("web_url")
+        or os.environ.get("LIVESHORTLY_WEB_URL")
+        or os.environ.get("LIVESHORTLY_FRONTEND_URL")
+        or "http://localhost:3000"
+    ).rstrip("/")
 
 
 # ── Credential store ──────────────────────────────────────────────────────────
@@ -246,6 +274,22 @@ def login(open_browser: bool = True, timeout: int = 180) -> dict | None:
     return None
 
 
+def setup(url: str = "https://liveshortly.com") -> None:
+    """Write ~/.liveshortly/host.json with the given base URL.
+
+    Both api_url and web_url are set to the same value; edit the file
+    manually if you need them to differ (e.g. dev with separate ports).
+    """
+    url = url.rstrip("/")
+    path = host_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump({"api_url": url, "web_url": url}, f, indent=2)
+    print(f"Host config written to {path}", file=sys.stderr)
+    print(f"  api_url: {url}", file=sys.stderr)
+    print(f"  web_url: {url}", file=sys.stderr)
+
+
 def logout() -> None:
     """Delete the local credentials file."""
     _delete_creds()
@@ -265,6 +309,10 @@ def whoami() -> dict | None:
 
 def _main(argv: list) -> int:
     cmd = (argv[0] if argv else "").lower()
+    if cmd == "setup":
+        url = argv[1] if len(argv) > 1 else "https://liveshortly.com"
+        setup(url)
+        return 0
     if cmd == "login":
         user = login()
         return 0 if user else 1
@@ -281,7 +329,7 @@ def _main(argv: list) -> int:
         else:
             print("not signed in")
         return 0
-    print("usage: python3 auth.py login|logout|whoami", file=sys.stderr)
+    print("usage: python3 auth.py setup [url] | login | logout | whoami", file=sys.stderr)
     return 2
 
 

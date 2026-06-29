@@ -10,7 +10,7 @@ your prompts, tool calls, and file edits; lets you **share** sessions Google-Dri
 style; and lets viewers **message back** into your session. v3 uses **browser-based
 sign-in** (no tokens to copy) — your sessions are owned by your Google account.
 
-Default backend: **https://server.liveshortly.com**
+Default backend: **https://liveshortly.com**
 
 ---
 
@@ -30,8 +30,8 @@ hooks talk to the hosted backend:
 ```json
 {
   "env": {
-    "LIVESHORTLY_API_URL": "https://server.liveshortly.com",
-    "LIVESHORTLY_WEB_URL": "https://server.liveshortly.com"
+    "LIVESHORTLY_API_URL": "https://liveshortly.com",
+    "LIVESHORTLY_WEB_URL": "https://liveshortly.com"
   }
 }
 ```
@@ -40,19 +40,44 @@ hooks talk to the hosted backend:
 
 ## 2. Install the plugin
 
-Clone the repo, register it as a local marketplace, and install:
+### From GitHub (recommended)
+
+Register the GitHub repo as a marketplace and install directly — no clone needed:
 
 ```bash
-git clone git@github.com:resapce/plugin.git liveshortly-plugin
-claude plugin marketplace add "$PWD/liveshortly-plugin" --scope user
-claude plugin install liveshortly@liveshortly-local --scope user
+claude plugin marketplace add https://github.com/resapce/plugin --scope user
+claude plugin install liveshortly@liveshortly --scope user
 claude plugin list      # verify "liveshortly  3.0.0  enabled"
 ```
 
-> If the marketplace got a different name, re-run `marketplace add` and use the
-> name it prints in the `install` command.
+### From a local clone
 
-## 3. Sign in (one time)
+```bash
+git clone https://github.com/resapce/plugin liveshortly-plugin
+claude plugin marketplace add "$PWD/liveshortly-plugin" --scope user
+claude plugin install liveshortly@liveshortly --scope user
+claude plugin list      # verify "liveshortly  3.0.0  enabled"
+```
+
+## 3. Configure the host (one time)
+
+Run `setup` to write `~/.liveshortly/host.json` with the backend URL. This is how
+every hook and MCP tool knows where to make requests — no env vars needed after this.
+
+```bash
+python3 "$(claude plugin path liveshortly)/hooks/lib/auth.py" setup https://liveshortly.com
+```
+
+This writes:
+```json
+{ "api_url": "https://liveshortly.com", "web_url": "https://liveshortly.com" }
+```
+
+The file is the single source of truth. Priority: **host.json → env var → localhost default**.
+
+> Edit the file manually if you need `api_url` and `web_url` on different ports (dev only).
+
+## 4. Sign in (one time)
 
 Start Claude Code, then authenticate. Two ways:
 
@@ -67,15 +92,15 @@ Start Claude Code, then authenticate. Two ways:
 This stores a refreshing token at `~/.liveshortly/credentials.json` (mode 600).
 Verify with the `whoami` tool or `… auth.py whoami`.
 
-## 4. Use it
+## 5. Use it
 
 Just code. On the next session start you'll see:
 
 ```
-🔴 Recording live → https://server.liveshortly.com/session/<id>
+🔴 Recording live → https://liveshortly.com/session/<id>
 ```
 
-- Open the dashboard at **https://server.liveshortly.com** → your runs appear under
+- Open the dashboard at **https://liveshortly.com** → your runs appear under
   **MY SESSIONS**.
 - **Share** a session (owner): click **SHARE** on its row → add an email + role
   (VIEWER / COMMENTER). It shows up under **SHARED WITH ME** for them.
@@ -90,16 +115,14 @@ notice — Claude keeps working normally.
 ## Update
 
 ```bash
-git -C liveshortly-plugin pull
-claude plugin marketplace update liveshortly-local
-claude plugin update liveshortly@liveshortly-local
+claude plugin update liveshortly@liveshortly
 ```
 
 ## Sign out / uninstall
 
 ```bash
 python3 "$(claude plugin path liveshortly)/hooks/lib/auth.py" logout   # clear creds
-claude plugin uninstall liveshortly@liveshortly-local
+claude plugin uninstall liveshortly@liveshortly
 ```
 
 ## Config reference

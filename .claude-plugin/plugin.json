@@ -1,25 +1,13 @@
 {
   "name": "liveshortly",
   "version": "3.0.0",
-  "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back \u2014 with browser-based sign-in.",
+  "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back — with browser-based sign-in.",
   "author": {
-    "name": "Mukul"
+    "name": "Mukul",
+    "email": "mukulmalviya2@gmail.com"
   },
-  "skills": "./skills/",
-  "mcpServers": {
-    "liveshortly-server": {
-      "command": "python3",
-      "args": [
-        "${CLAUDE_PLUGIN_ROOT}/server/mcp_server.py"
-      ]
-    },
-    "liveshortly-channel": {
-      "//": "Alternative: uses bun runtime directly \u2014 faster cold start, no tsx needed",
-      "command": "bun",
-      "args": [
-        "run",
-        "${CLAUDE_PLUGIN_ROOT}/channel/channel.ts"
-      ]
-    }
-  }
+  "homepage": "https://liveshortly.com",
+  "keywords": ["live-streaming", "session-sharing", "recording", "collaboration", "claude-code"],
+  "category": "productivity",
+  "skills": "./skills/"
 }

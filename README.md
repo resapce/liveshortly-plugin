@@ -102,7 +102,7 @@ File: `~/.liveshortly/credentials.json` (mode `0600`, override with `LIVESHORTLY
 
 ```json
 {
-  "api_url": "https://server.liveshortly.com",
+  "api_url": "https://liveshortly.com",
   "access_token": "...",
   "refresh_token": "lsr_...",
   "expires_at": "2026-06-27T11:00:00+00:00",
@@ -248,11 +248,25 @@ curl -N localhost:8788/events                          # SSE stream
 curl -d "hello from the bridge" -H "X-Sender: dev" localhost:8788
 ```
 
-## Installing from the local marketplace
+## Installing from GitHub
 
 ```bash
-claude plugin marketplace update    # register the local marketplace
-claude plugin update liveshortly    # install / upgrade the plugin
+# Register the GitHub repo as a marketplace (one time)
+claude plugin marketplace add https://github.com/resapce/plugin --scope user
+
+# Install
+claude plugin install liveshortly@liveshortly --scope user
+
+# Upgrade later
+claude plugin update liveshortly@liveshortly
+```
+
+### Local clone install
+
+```bash
+git clone https://github.com/resapce/plugin liveshortly-plugin
+claude plugin marketplace add "$PWD/liveshortly-plugin" --scope user
+claude plugin install liveshortly@liveshortly --scope user
 ```
 
 ---

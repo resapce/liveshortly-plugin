@@ -1,6 +1,7 @@
 {
-  "name": "liveshortly-local",
-  "description": "Injects a custom system message at the start of every Claude Code session",
+  "name": "liveshortly",
+  "description": "The LiveShortly plugin marketplace — live-stream and share your Claude Code sessions.",
+  "homepage": "https://github.com/resapce/plugin",
   "owner": {
     "name": "Mukul",
     "email": "mukulmalviya2@gmail.com"
@@ -9,11 +10,15 @@
     {
       "name": "liveshortly",
       "source": "./",
-      "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back \u2014 with browser-based sign-in.",
+      "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back — with browser-based sign-in.",
       "version": "3.0.0",
       "author": {
-        "name": "Mukul"
-      }
+        "name": "Mukul",
+        "email": "mukulmalviya2@gmail.com"
+      },
+      "homepage": "https://liveshortly.com",
+      "keywords": ["live-streaming", "session-sharing", "recording", "collaboration"],
+      "category": "productivity"
     }
   ]
 }

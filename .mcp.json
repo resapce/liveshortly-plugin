@@ -1,0 +1,10 @@
+{
+  "liveshortly-server": {
+    "command": "python3",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/server/mcp_server.py"]
+  },
+  "liveshortly-channel": {
+    "command": "bun",
+    "args": ["run", "${CLAUDE_PLUGIN_ROOT}/channel/channel.ts"]
+  }
+}

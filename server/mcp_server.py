@@ -21,11 +21,17 @@ _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_PLUGIN_ROOT, "hooks", "lib"))
 import auth  # noqa: E402
 
-API_URL = (
-    os.environ.get("LIVESHORTLY_API_URL")
-    or os.environ.get("LEMMAY_API_URL")
-    or "http://localhost:8000"
-).rstrip("/")
+def _resolve_api_url() -> str:
+    host = auth.load_host()
+    return (
+        host.get("api_url")
+        or os.environ.get("LIVESHORTLY_API_URL")
+        or os.environ.get("LEMMAY_API_URL")
+        or "http://localhost:8000"
+    ).rstrip("/")
+
+
+API_URL = _resolve_api_url()
 
 _UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
@@ -224,12 +230,7 @@ def handle_fork_trace(args: dict) -> str:
     trace_id = args["trace_id"]
     data = _post(f"/api/fork/{trace_id}")
     new_id = data.get("trace_id", "?")
-    frontend = (
-        os.environ.get("LIVESHORTLY_WEB_URL")
-        or os.environ.get("LIVESHORTLY_FRONTEND_URL")
-        or os.environ.get("LEMMAY_FRONTEND_URL")
-        or "http://localhost:3000"
-    ).rstrip("/")
+    frontend = auth.web_url()
     return f"Forked successfully.\nNew trace ID: {new_id}\nView at: {frontend}/trace/{new_id}"
 
 
