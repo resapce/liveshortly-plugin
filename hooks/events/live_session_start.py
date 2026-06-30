@@ -14,6 +14,9 @@ def main():
     session_id = data.get("session_id", "default")
     cwd = data.get("cwd", "")
     source = data.get("source") or "startup"
+    # On resume the transcript already names the model; on a fresh start it's
+    # unknown until the first turn (reported later from stop.py).
+    model = common.detect_model(data.get("transcript_path", ""))
 
     base = os.path.basename(os.path.normpath(cwd)) if cwd else "session"
     if not base or base in (".", "/"):
@@ -33,7 +36,7 @@ def main():
     common.notify("SessionStart — starting live session…")
 
     try:
-        live_id = common.live_start(title=title, timeout=25)
+        live_id = common.live_start(title=title, model=model, timeout=25)
         if not live_id:
             common.notify("⚠ Could not start live session (is the API running?)")
             common.done()
@@ -43,6 +46,8 @@ def main():
             s["live_session_id"] = live_id
             s["cwd"] = cwd
             s["started_at"] = common.now()
+            if model:
+                s["model"] = model
 
         state.with_locked_state(session_id, _update)
         state.set_current_live_session(live_id)

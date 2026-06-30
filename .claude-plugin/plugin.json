@@ -1,6 +1,6 @@
 {
   "name": "liveshortly",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back — with browser-based sign-in.",
   "author": {
     "name": "Mukul",

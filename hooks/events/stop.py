@@ -20,6 +20,16 @@ def main():
             common.done()
             return
 
+        # Report the true model once the transcript reveals it (a fresh session
+        # is created before any assistant turn, so it starts model-less).
+        if not s.get("model"):
+            model = common.detect_model(data.get("transcript_path", ""))
+            if model and common.report_model(live_id, model):
+                def _set_model(st):
+                    st["model"] = model
+                state.with_locked_state(session_id, _set_model)
+                common.notify(f"model reported → {model}")
+
         if last_message:
             common.emit_event(live_id, "response", {
                 "content": common.truncate(last_message, 8000),

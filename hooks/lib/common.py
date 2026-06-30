@@ -70,16 +70,59 @@ def api_post(path: str, body=None, timeout: int = 10):
 
 # ── Live session helpers ──────────────────────────────────────────────────────
 
-def live_start(title: str = "session", model: str = "claude",
+def live_start(title: str = "session", model: str = None,
                framework: str = "claude-code", timeout: int = 25):
-    """Create a live session. Returns the session id or None."""
-    data, status = api_post("/api/sessions", {
-        "title": title,
-        "model": model,
-        "framework": framework,
-    }, timeout=timeout)
+    """Create a live session. Returns the session id or None.
+
+    `model` is omitted when unknown (a fresh session has no assistant turn yet);
+    the true model is reported later via report_model() once the transcript
+    reveals it.
+    """
+    body = {"title": title, "framework": framework}
+    if model:
+        body["model"] = model
+    data, status = api_post("/api/sessions", body, timeout=timeout)
     if data and 200 <= status < 300:
         return data.get("id")
+    return None
+
+
+def report_model(live_id: str, model: str, timeout: int = 8) -> bool:
+    """Set the session's model label (owner-only PATCH). Returns True on success."""
+    if not (live_id and model):
+        return False
+    _, status = _request("PATCH", f"/api/sessions/{live_id}", {"model": model},
+                         timeout=timeout)
+    return 200 <= status < 300
+
+
+def detect_model(transcript_path: str):
+    """Best-effort: read the model id from the session transcript.
+
+    Claude Code writes a JSONL transcript; each assistant turn carries
+    `message.model` (e.g. "claude-opus-4-8"). Scans from the end for the most
+    recent assistant model. Returns the model id or None.
+    """
+    if not transcript_path or not os.path.exists(transcript_path):
+        return None
+    try:
+        with open(transcript_path, "r") as f:
+            lines = f.readlines()
+    except OSError:
+        return None
+    for line in reversed(lines):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except (ValueError, json.JSONDecodeError):
+            continue
+        msg = obj.get("message")
+        if isinstance(msg, dict):
+            model = msg.get("model")
+            if model and model != "<synthetic>":
+                return model
     return None
 
 
