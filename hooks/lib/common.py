@@ -154,6 +154,25 @@ def fetch_viewer_comments(live_id: str, timeout: int = 8) -> list:
     return []
 
 
+def get_decision(live_id: str, timeout: int = 5):
+    """Pop the next queued viewer allow/deny and report the live watcher count.
+
+    Returns (decision|None, watcher_count). Used by PreToolUse to let viewers
+    answer a permission prompt from the web.
+    """
+    data, status = api_get(f"/api/sessions/{live_id}/decision", timeout=timeout)
+    if data and 200 <= status < 300:
+        decision = data.get("decision")
+        if decision not in ("allow", "deny"):
+            decision = None
+        try:
+            watchers = int(data.get("watchers") or 0)
+        except (TypeError, ValueError):
+            watchers = 0
+        return decision, watchers
+    return None, 0
+
+
 # ── General utilities ─────────────────────────────────────────────────────────
 
 def truncate(text, max_len: int = 2000) -> str:

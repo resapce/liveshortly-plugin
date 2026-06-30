@@ -4,6 +4,24 @@ All notable changes to the LiveShortly plugin are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/);
 this project uses semantic-ish versioning (`MAJOR.MINOR.PATCH`).
 
+## [3.2.0]
+
+### Added
+- **Web-driven permission decisions.** When a viewer is watching a live session,
+  the web banner's **Yes/No** buttons now actually answer the CLI's permission
+  prompt. The `PreToolUse` hook detects watchers, emits an `input_requested`
+  (kind=permission) for the pending Edit/Write/Bash, and waits up to
+  `LIVESHORTLY_PERMISSION_WAIT` seconds (default 30) for a `POST /decision`
+  allow/deny, returning it as the hook's `permissionDecision`. A `viewer_decision`
+  event records who answered.
+- When nobody is watching (no web tab open) or nobody answers in time, the hook
+  defers to Claude Code's normal local prompt — **zero added latency for solo
+  local coding**. Set `LIVESHORTLY_WEB_PERMISSIONS=0` to disable entirely.
+
+### Fixed
+- Pressing Yes/No in the web previously arrived only as a chat message and could
+  not drive the blocked CLI prompt; it now resolves the prompt directly.
+
 ## [3.1.0]
 
 ### Added
