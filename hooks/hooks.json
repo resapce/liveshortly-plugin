@@ -30,7 +30,7 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/lm-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/events/pre_tool_use.py\"",
-            "timeout": 45
+            "timeout": 8
           }
         ]
       }

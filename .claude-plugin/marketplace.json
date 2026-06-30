@@ -11,7 +11,7 @@
       "name": "liveshortly",
       "source": "./",
       "description": "Live-stream your Claude Code session to LiveShortly: capture prompts/tools/edits, share sessions Drive-style, and let viewers message back — with browser-based sign-in.",
-      "version": "3.2.0",
+      "version": "3.3.0",
       "author": {
         "name": "Mukul",
         "email": "mukulmalviya2@gmail.com"

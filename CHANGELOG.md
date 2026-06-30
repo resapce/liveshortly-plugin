@@ -4,6 +4,16 @@ All notable changes to the LiveShortly plugin are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/);
 this project uses semantic-ish versioning (`MAJOR.MINOR.PATCH`).
 
+## [3.3.0]
+
+### Changed
+- **Input/permission requests are now non-blocking.** Reverted the 3.2.0
+  PreToolUse "wait for a web allow/deny" behavior — the CLI is never stalled
+  waiting on the web. `Notification` still surfaces the request to viewers
+  (`input_requested`), and a viewer's typed reply is injected on the session's
+  next turn, but the permission prompt is answered in the terminal as usual.
+  `PreToolUse` is back to a fast, fire-and-forget `pre_tool` emit.
+
 ## [3.2.0]
 
 ### Added
